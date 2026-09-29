@@ -9,7 +9,7 @@ GitHub Actions publishes pushes to `main` to your Hostinger VPS.
 Node server, Docker, database, or build framework is required. The waitlist,
 beta, payment, and referral screens are demonstrations: hosting does not make
 them functional. The existing prototype notices remain visible. Search indexing
-is discouraged with robots.txt and an Nginx header; this does not restrict access.
+is discouraged with robots.txt and an Apache header; this does not restrict access.
 
 `python scripts/build.py` validates local links and generates `dist/` with an
 `index.html` copied from `CatSimba_Home.html`. Only public HTML and robots.txt
@@ -18,7 +18,7 @@ not placed in the web root. All existing HTML filenames remain valid URLs.
 
 ## 1. Check the VPS before changing it
 
-The following commands assume **Ubuntu/Debian with standalone Nginx** and an
+The following commands assume **Ubuntu/Debian with Apache 2.4** and an
 administrator with sudo access. Do not apply them unchanged to a VPS managed by
 CloudPanel, Plesk, cPanel, an existing reverse proxy, or a Docker ingress: create
 the equivalent virtual host through that stack instead. Do not reinstall the OS.
@@ -28,18 +28,20 @@ Inspect the OS, active listeners, and current sites:
 ```bash
 cat /etc/os-release
 sudo ss -ltnp
-sudo nginx -T
+sudo apache2ctl -S
+sudo apache2ctl -M
 ```
 
-`nginx -T` will fail if Nginx is not installed yet. If Apache or another service
-already owns ports 80/443, resolve the hosting arrangement before installing Nginx.
-Preserve existing sites and their configuration.
+Confirm Apache owns ports 80/443 and inspect existing virtual hosts for the
+target hostname. Preserve existing sites and their configuration. On RHEL-based
+systems the service is usually `httpd` and config paths/package commands differ;
+adapt these instructions to the installed OS before proceeding.
 
 For a compatible VPS:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y nginx curl certbot python3-certbot-nginx
+sudo apt-get install -y curl certbot python3-certbot-apache
 sudo adduser --disabled-password --gecos '' cashbasis-deploy
 sudo install -d -o cashbasis-deploy -g cashbasis-deploy -m 755 /var/www/cashbasis
 sudo install -d -o cashbasis-deploy -g cashbasis-deploy -m 755 /var/www/cashbasis/releases
@@ -69,7 +71,7 @@ Custom records**, then add:
 | A | cashbasis | Your Hostinger VPS public IPv4 | Default |
 
 Keep the root domain, `www`, nameservers, and mail records unchanged. Do not add
-an AAAA record unless the VPS has working IPv6 and Nginx/firewalls are configured
+an AAAA record unless the VPS has working IPv6 and Apache/firewalls are configured
 for it; an incorrect AAAA can break access and certificate validation.
 
 Verify from your computer:
@@ -78,19 +80,20 @@ Verify from your computer:
 Resolve-DnsName cashbasis.catsimba.com -Type A
 ```
 
-## 3. Configure Nginx and HTTPS
+## 3. Configure Apache and HTTPS
 
-Copy `deploy/nginx.conf` to `/etc/nginx/sites-available/cashbasis` on the VPS.
-Check for an existing file/server block with that name before installing it.
+Copy `deploy/apache.conf` to `/etc/apache2/sites-available/cashbasis.conf` on the VPS.
+Check for an existing file/virtual host with that name before installing it.
 Create a temporary page so HTTPS can be verified before the first deployment:
 
 ```bash
 sudo -u cashbasis-deploy mkdir /var/www/cashbasis/releases/bootstrap
 printf '%s\n' 'Cashbasis deployment pending' | sudo -u cashbasis-deploy tee /var/www/cashbasis/releases/bootstrap/index.html
 sudo -u cashbasis-deploy ln -s /var/www/cashbasis/releases/bootstrap /var/www/cashbasis/current
-sudo ln -s /etc/nginx/sites-available/cashbasis /etc/nginx/sites-enabled/cashbasis
-sudo nginx -t
-sudo systemctl reload nginx
+sudo a2enmod headers
+sudo a2ensite cashbasis.conf
+sudo apache2ctl configtest
+sudo systemctl reload apache2
 ```
 
 These initialization commands are for the first setup only; do not replace an
@@ -98,7 +101,8 @@ existing `current` symlink or enabled site on subsequent deployments.
 Once DNS resolves to this VPS and port 80 is reachable, obtain TLS:
 
 ```bash
-sudo certbot --nginx -d cashbasis.catsimba.com --redirect
+sudo certbot --apache -d cashbasis.catsimba.com --redirect
+sudo apache2ctl configtest
 sudo certbot renew --dry-run
 curl --fail https://cashbasis.catsimba.com/
 ```
@@ -109,6 +113,14 @@ DNS, IPv6, ports 80/443, and any inherited CAA records allowing Let's Encrypt.
 Keep Certbot's HTTPS modifications; do not overwrite the live config with the
 original HTTP template on future deployments. The workflow requires working TLS
 and performs a local HTTPS check through `127.0.0.1` before accepting a release.
+
+The virtual host allows symlinks for atomic releases and disables directory
+listings and `.htaccess` overrides. Missing pages return Apache's normal 404.
+Certbot creates/configures the HTTPS virtual host; verify that its DocumentRoot
+is `/var/www/cashbasis/current` and it retains the Directory and Header directives.
+Apache must listen on loopback port 443 for the workflow's local check. If your
+existing configuration binds only a specific IP, adapt that check to the listening
+IP. Ordinary HTML releases require no Apache reload or sudo privileges.
 
 ## 4. Set up deployment SSH access
 
@@ -199,13 +211,16 @@ curl --fail https://cashbasis.catsimba.com/
 An interrupted deployment may leave a `.next`/`.rollback` symlink. Inspect it
 before removing it and rerunning; do not remove the `current` link.
 Open the site and check navigation, pricing calculators, and prototype form flows
-after the first successful deployment. Review Nginx logs if the workflow fails.
+after the first successful deployment. Review `/var/log/apache2/cashbasis-error.log`
+and `/var/log/apache2/cashbasis-access.log` if the workflow fails.
 
-To use a different hostname, replace `cashbasis.catsimba.com` in the Nginx
+To use a different hostname, replace `cashbasis.catsimba.com` in the Apache
 template, workflow (including health checks), DNS, and certificate command.
 
 ## References
 
+- [Apache directory and symlink configuration](https://httpd.apache.org/docs/2.4/mod/core.html)
+- [Certbot Apache plugin](https://eff-certbot.readthedocs.io/en/stable/using.html#apache)
 - [Spaceship DNS record setup](https://www.spaceship.com/en-GB/knowledgebase/dns-records-types/)
 - [Hostinger VPS domain pointing](https://www.hostinger.com/support/1583227-how-to-point-a-domain-to-your-vps-at-hostinger/)
 - [GitHub deployment environments](https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments)

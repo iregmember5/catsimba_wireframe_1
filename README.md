@@ -13,7 +13,7 @@ The generated `dist/` directory includes the homepage as `index.html`.
 
 ## Deployment
 
-Pushes to `main` trigger GitHub Actions deployment to a Hostinger VPS serving
+Pushes to `main` trigger GitHub Actions deployment to an Apache Hostinger VPS serving
 `https://cashbasis.catsimba.com`. Pull requests validate the site without deploying.
 
 Complete the one-time VPS, DNS, HTTPS, and GitHub secrets setup in
