@@ -19,4 +19,20 @@ Pushes to `main` trigger GitHub Actions deployment to an Apache Hostinger VPS se
 Complete the one-time VPS, DNS, HTTPS, and GitHub secrets setup in
 [DEPLOYMENT.md](DEPLOYMENT.md) before expecting a successful deployment.
 
+### Publishing updates
+
+After deployment setup, edit the HTML files and push to `main`:
+
+```sh
+git add .
+git commit -m "Update website"
+git push origin main
+```
+
+GitHub Actions validates the pages, uploads a new release, and checks HTTPS.
+Follow the run in the repository's **Actions** tab. Failed validation prevents
+deployment; a failed server content check restores the previous release.
+
+Live site: https://cashbasis.catsimba.com
+
 See [README.txt](README.txt) for the original design notes.
