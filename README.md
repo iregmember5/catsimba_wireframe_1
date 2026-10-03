@@ -29,7 +29,8 @@ git commit -m "Update website"
 git push origin main
 ```
 
-GitHub Actions validates the pages, uploads a new release, and checks HTTPS.
+GitHub Actions validates the pages, uploads a new release, checks Apache configuration,
+restarts Apache, and checks HTTPS.
 Follow the run in the repository's **Actions** tab. Failed validation prevents
 deployment; a failed server content check restores the previous release.
 

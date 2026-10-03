@@ -66,9 +66,21 @@ jobs:
           base=/var/www/cashbasis
           release=$1
           test -s "$base/releases/$release/index.html"
+          # Check the exact permission before changing the active release.
+          sudo -n -l /usr/local/sbin/cashbasis-restart-apache
           previous=$(readlink "$base/current" || true)
           ln -s "$base/releases/$release" "$base/current.next"
           mv -Tf "$base/current.next" "$base/current"
+          if ! sudo -n /usr/local/sbin/cashbasis-restart-apache; then
+            if [ -n "$previous" ]; then
+              ln -s "$previous" "$base/current.rollback"
+              mv -Tf "$base/current.rollback" "$base/current"
+            else
+              rm "$base/current"
+            fi
+            echo 'Apache restart failed; release deactivated.' >&2
+            exit 1
+          fi
           if ! curl --fail --silent --show-error --retry 3 --retry-all-errors \
               --connect-timeout 10 --max-time 30 \
               --resolve cashbasis.catsimba.com:443:127.0.0.1 \

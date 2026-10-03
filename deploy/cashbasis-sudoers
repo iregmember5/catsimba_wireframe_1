@@ -1,0 +1,2 @@
+# Install root-owned at /etc/sudoers.d/cashbasis-deploy (mode 0440).
+cashbasis-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cashbasis-restart-apache ""

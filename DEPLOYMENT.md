@@ -48,8 +48,8 @@ sudo install -d -o cashbasis-deploy -g cashbasis-deploy -m 755 /var/www/cashbasi
 sudo install -d -o cashbasis-deploy -g cashbasis-deploy -m 700 /home/cashbasis-deploy/.ssh
 ```
 
-Use an existing dedicated user if already created. This deployment user needs no
-sudo access. Retain releases for rollback; periodically review disk usage and
+Use an existing dedicated user if already created. This deployment user gets only
+the Apache restart permission described below. Retain releases for rollback; periodically review disk usage and
 remove old releases manually, keeping the current and previous good release.
 
 Allow TCP 80 and 443 in the Hostinger firewall and the VPS firewall. Allow your
@@ -120,7 +120,23 @@ Certbot creates/configures the HTTPS virtual host; verify that its DocumentRoot
 is `/var/www/cashbasis/current` and it retains the Directory and Header directives.
 Apache must listen on loopback port 443 for the workflow's local check. If your
 existing configuration binds only a specific IP, adapt that check to the listening
-IP. Ordinary HTML releases require no Apache reload or sudo privileges.
+IP. This pipeline restarts Apache after activating each release, as requested.
+This briefly interrupts all sites served by the same Apache service.
+
+Install the fixed restart helper and narrowly scoped sudo permission once from
+the repository checkout on the VPS, using an administrator account:
+
+```bash
+sudo install -o root -g root -m 755 deploy/cashbasis-restart-apache /usr/local/sbin/cashbasis-restart-apache
+sudo visudo -cf deploy/cashbasis-sudoers
+sudo install -o root -g root -m 440 deploy/cashbasis-sudoers /etc/sudoers.d/cashbasis-deploy
+sudo visudo -c
+```
+
+The helper checks Apache configuration before restarting, rejects arguments, and
+must remain root-owned and not writable by the deployment user. No general sudo
+or arbitrary systemctl access is granted. The workflow checks permission before
+switching releases; restart failure restores the previous release and fails the run.
 
 ## 4. Set up deployment SSH access
 
@@ -191,7 +207,8 @@ permissions and does not retain Git credentials.
 ## Releases, verification, and rollback
 
 Deployments upload into `/var/www/cashbasis/releases/COMMIT-RUN-ATTEMPT`, then
-atomically switch `/var/www/cashbasis/current`. A local HTTPS check compares the
+atomically switch `/var/www/cashbasis/current`, then validate Apache configuration
+and restart Apache. A local HTTPS check compares the
 served homepage to the uploaded file; failure restores the previous symlink.
 A separate GitHub-runner check verifies public DNS/HTTPS and homepage contents.
 A failure of this external check marks the job failed but does not undo a release
