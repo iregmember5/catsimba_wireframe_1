@@ -9,7 +9,8 @@ Open `CatSimba_Home.html` locally, or build the deployable site:
 python scripts/build.py
 ```
 
-The generated `dist/` directory includes the homepage as `index.html`.
+The generated `dist/` directory preserves the supplied `index.html` and all
+wireframe pages unchanged. The original entry page redirects to `CatSimba_Home.html`.
 
 ## Deployment
 
