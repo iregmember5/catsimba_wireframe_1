@@ -12,7 +12,7 @@ them functional. The existing prototype notices remain visible. Search indexing
 is discouraged with robots.txt and an Apache header; this does not restrict access.
 
 `python scripts/build.py` validates local links and generates `dist/` with an
-`index.html` copied from `CatSimba_Home.html`. Only public HTML and robots.txt
+unchanged `index.html` from the supplied wireframe package. Only public HTML and robots.txt
 are deployed. Source documentation, scripts, credentials, and Git metadata are
 not placed in the web root. All existing HTML filenames remain valid URLs.
 
