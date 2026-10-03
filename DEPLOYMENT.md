@@ -5,7 +5,7 @@ GitHub Actions publishes pushes to `main` to your Hostinger VPS.
 
 ## What this project actually contains
 
-20 standalone HTML pages with inline CSS/JavaScript. No package installation,
+28 standalone HTML pages (Collaboration V2.23) with inline CSS/JavaScript. No package installation,
 Node server, Docker, database, or build framework is required. The waitlist,
 beta, payment, and referral screens are demonstrations: hosting does not make
 them functional. The existing prototype notices remain visible. Search indexing

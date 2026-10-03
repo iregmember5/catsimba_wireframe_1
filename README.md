@@ -1,6 +1,6 @@
 # CatSimba wireframe
 
-Static, clickable CatSimba website prototype with 20 HTML pages. Forms, payments,
+CatSimba Collaboration V2.23: a static, clickable prototype with 28 HTML pages. Forms, payments,
 and registrations are demonstrations and do not submit data to a backend.
 
 Open `CatSimba_Home.html` locally, or build the deployable site:
@@ -36,3 +36,4 @@ deployment; a failed server content check restores the previous release.
 Live site: https://cashbasis.catsimba.com
 
 See [README.txt](README.txt) for the original design notes.
+See [COLLABORATION_CHANGE_NOTES.md](COLLABORATION_CHANGE_NOTES.md) for the V2.23 changes.
